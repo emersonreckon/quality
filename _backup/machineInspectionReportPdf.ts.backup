@@ -1,0 +1,201 @@
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+
+declare module "jspdf" {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    lastAutoTable: {
+      finalY: number;
+    } | undefined;
+  }
+}
+
+// Configs adapted from Python
+const SECRET_KEY = '981239jw1298';
+const MASTER_IP = '172.29.1.8';
+const SHELF_BASE_IP = '172.29.1.';
+const MASTER_PORT = '8000';
+const SHELF_PORT = '5002';
+
+const HEADERS_MASTER = { "secret": SECRET_KEY, "sender-port": "8060" };
+const HEADERS_SHELF = { "secret": SECRET_KEY, "sender-port": "8060" };
+
+const fetchJSON = async (url: string, headers: HeadersInit) => {
+  try {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(url, { headers, signal: controller.signal });
+    clearTimeout(id);
+    if (!res.ok) return `HTTP Error ${res.status}`;
+    const text = await res.text();
+    try {
+      return JSON.stringify(JSON.parse(text));
+    } catch {
+      return text;
+    }
+  } catch (err: any) {
+    return `Fetch Error`;
+  }
+};
+
+const fetchImageBase64 = async (url: string, headers: HeadersInit): Promise<string | null> => {
+  try {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, { headers, signal: controller.signal });
+    clearTimeout(id);
+    if (!res.ok) return null;
+    
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return null;
+    }
+    
+    const blob = await res.blob();
+    return await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    return null;
+  }
+};
+
+/**
+ * Obtém as dimensões reais de uma imagem a partir de um data URL
+ */
+const getImageDimensions = (dataUrl: string): Promise<{ width: number, height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve({ width: 800, height: 600 });
+    img.src = dataUrl;
+  });
+};
+
+export const generateMachineReportPDF = async (cabinetSN: string, numShelves: number = 4) => {
+  try {
+    const doc = new jsPDF();
+    
+    // Polyfill autoTable just in case
+    if (typeof doc.autoTable !== 'function') {
+      (doc as any).autoTable = function (options: any) {
+        autoTable(this, options);
+        return this;
+      };
+    }
+
+    const currentDate = new Date();
+    const dateStr = currentDate.toISOString().replace('T', ' ').substring(0, 26);
+    const fileDateStr = currentDate.getFullYear() +
+      String(currentDate.getMonth() + 1).padStart(2, '0') +
+      String(currentDate.getDate()).padStart(2, '0') + '_' +
+      String(currentDate.getHours()).padStart(2, '0') +
+      String(currentDate.getMinutes()).padStart(2, '0') +
+      String(currentDate.getSeconds()).padStart(2, '0');
+
+    // --- Page 1: Master Status ---
+    doc.setFontSize(16);
+    doc.text("Machine Report", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`SN Cabinet: ${cabinetSN}`, 14, 30);
+    doc.text(`DATE: ${dateStr}`, 14, 36);
+
+    doc.text(`Master Component (${MASTER_IP}) Status:`, 14, 50);
+
+
+    doc.setFontSize(10);
+    doc.text(`Door Status: ${doorStatus}`, 14, 60);
+    doc.text(`Actuator Status: ${actuatorStatus}`, 14, 66);
+    
+    let notifyDoors = "N/A";
+    let notifyActuator = "N/A";
+    if (typeof notify === 'string' && notify.includes('door')) {
+      notifyDoors = notify; // Just putting the raw response if parsing fails perfectly
+    }
+    
+    doc.text(`Notify Doors: ${notifyDoors}`, 14, 72);
+    doc.text(`Notify Actuator: ${notifyActuator}`, 14, 78);
+
+    // --- Pages 2..N: Shelves ---
+    const allImages: { ip: string, left: string | null, right: string | null }[] = [];
+    
+    for (let i = 1; i <= numShelves; i++) {
+      const ip = `${i * 10}`;
+      const fullIp = `${SHELF_BASE_IP}${ip}`;
+      
+      doc.addPage();
+      
+      const scaleWeight = await fetchJSON(`http://${fullIp}:${SHELF_PORT}/scale/weight/simple`, HEADERS_MASTER);
+      const tempSensor = await fetchJSON(`http://${fullIp}:${SHELF_PORT}/event/ONE-WIRE`, HEADERS_MASTER);
+      
+      const imgLeft = await fetchImageBase64(`http://${fullIp}:${SHELF_PORT}/camera/left`, HEADERS_SHELF);
+      const imgRight = await fetchImageBase64(`http://${fullIp}:${SHELF_PORT}/camera/right`, HEADERS_SHELF);
+      
+      allImages.push({ ip: fullIp, left: imgLeft, right: imgRight });
+
+      doc.setFontSize(14);
+      doc.text(`Shelf ${fullIp} (SN: N/A)`, 14, 20); // Fallback SN as no endpoint was clearly defined
+      
+      doc.setFontSize(11);
+      doc.text(`Scale Weight: ${scaleWeight}`, 14, 30);
+      doc.text(`Temperature Sensor: ${tempSensor}`, 14, 36);
+
+      // Render images
+      if (imgLeft) {
+        doc.text("Left Camera:", 14, 50);
+        doc.addImage(imgLeft, 'JPEG', 14, 55, 80, 60);
+      } else {
+        doc.text("[Sem Imagem Câmera Esquerda]", 14, 50);
+      }
+
+      if (imgRight) {
+        doc.text("Right Camera:", 104, 50);
+        doc.addImage(imgRight, 'JPEG', 104, 55, 80, 60);
+      } else {
+        doc.text("[Sem Imagem Câmera Direita]", 104, 50);
+      }
+    }
+
+    // --- Final Page: Combined Grid ---
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.text("Combined Shelf Images Overview", 14, 20);
+    
+    let currentY = 30;
+    
+    for (const shelfImgs of allImages) {
+      if (currentY > 240) {
+        doc.addPage();
+        currentY = 20;
+      }
+      
+      doc.setFontSize(11);
+      doc.text(`Images from Shelf ${shelfImgs.ip}`, 14, currentY);
+      
+      if (shelfImgs.left) {
+        doc.addImage(shelfImgs.left, 'JPEG', 14, currentY + 5, 80, 60);
+      } else {
+        doc.text("N/A", 14, currentY + 35);
+      }
+      
+      if (shelfImgs.right) {
+        doc.addImage(shelfImgs.right, 'JPEG', 104, currentY + 5, 80, 60);
+      } else {
+        doc.text("N/A", 104, currentY + 35);
+      }
+      
+      currentY += 75;
+    }
+
+    const fileName = `machineReport_${cabinetSN}_${fileDateStr}.pdf`;
+    doc.save(fileName);
+    
+    return { success: true, message: `Report gerado com sucesso: ${fileName}` };
+  } catch (error: any) {
+    console.error("Error generating Machine Report:", error);
+    return { success: false, message: `Erro ao gerar relatório: ${error.message}` };
+  }
+};

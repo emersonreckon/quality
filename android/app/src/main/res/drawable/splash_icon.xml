@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Viewport 3x larger than the R paths so the logo appears small (~30% of
+     the 160dp icon area), matching the visual size of the React SplashScreen. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="160dp"
+    android:viewportWidth="2580"
+    android:viewportHeight="2580">
+    <group
+        android:translateX="860"
+        android:translateY="860">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M533.17,188.88c-26.56,0-52.87,5.7-78.82,17.15-25.95,11.45-48.54,33.84-67.68,67.22h-1.88l-5.55-70.47h-203.38v465.49h208.93v-290.24c0-18.52,4.33-31.85,12.98-39.84,8.65-8.04,19.18-12.06,31.55-12.06,27.22,0,40.81,17.91,40.81,53.78v14.04h208.93v-35.36c0-30.89-4.02-57.19-12.06-78.82-8.04-21.63-19.18-39.08-33.38-52.41-26.1-24.37-64.88-38.47-100.45-38.47Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M574.79,459.18c-58.47,0-105.84,47.37-105.84,105.84s47.37,105.84,105.84,105.84,105.84-47.37,105.84-105.84-47.37-105.84-105.84-105.84Z" />
+    </group>
+</vector>
