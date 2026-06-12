@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+android/
+*.apk
+*.aab
+_backup/
+node_modules/
+dist/
+build/
