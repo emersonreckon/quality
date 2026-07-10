@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { InspectionItem } from "@/types/inspection";
 import JSZip from 'jszip';
-import { isNativePlatform, saveFileToDevice, saveZipToDevice } from '@/utils/nativeFileUtils';
+import { isNativePlatform, saveZipToDevice } from '@/utils/nativeFileUtils';
 
 declare module "jspdf" {
   interface jsPDF {
@@ -24,18 +24,6 @@ type FormData = {
 };
 
 // --- HELPERS ---
-
-/**
- * Obtém as dimensões reais de uma imagem a partir de um data URL
- */
-const getImageDimensions = (dataUrl: string): Promise<{ width: number, height: number }> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => resolve({ width: 800, height: 600 });
-    img.src = dataUrl;
-  });
-};
 
 /**
  * Converte dataURL para Blob de forma segura
@@ -125,14 +113,15 @@ export const generateInspectionPDF = async (
     const addSection = (title: string, items: InspectionItem[], startY: number) => {
       doc.setFontSize(12);
       doc.text(title, 14, startY);
-      const rows = items.map(it => [it.label, it.defaultRecord || "", it.defaultResult || "", it.comment || ""]);
+      const rows = items.map(it => [it.label, it.defaultRecord || "", it.checked ? "OK" : "—"]);
       doc.autoTable({
         startY: startY + 5,
-        head: [['Item', 'Registo', 'Resultado', 'Comentário']],
+        head: [['Item', 'Registo', 'Verificado']],
         body: rows,
         theme: 'grid',
         styles: { fontSize: 8 },
-        headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0] }
+        headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0] },
+        columnStyles: { 2: { halign: 'center' } }
       });
       return (doc.lastAutoTable?.finalY || (startY + 20)) + 10;
     };
@@ -180,26 +169,15 @@ export const generateInspectionPDF = async (
     zipTarget.file(mainPdfName, mainPdfBlob);
     console.log(`[ZIP SERVICE] PDF Principal adicionado ao ZIP: ${mainPdfName}`);
 
-    // 2. GERAR PDFs DE FOTOS
+    // 2. ADICIONAR FOTOS COMO JPG
     console.log(`[ZIP SERVICE] Processando ${photoMap.size} fotos...`);
     for (const [code, data] of photoMap.entries()) {
       if (!data || code.toUpperCase().endsWith('_V1')) continue;
 
       try {
-        const photoDoc = new jsPDF();
-        photoDoc.setFontSize(16);
-        photoDoc.text(`Registo: ${code}`, 14, 20);
-
-        const dims = await getImageDimensions(data);
-        const maxW = 180;
-        const maxH = 230;
-        let w = maxW;
-        let h = (dims.height / dims.width) * w;
-        if (h > maxH) { h = maxH; w = (dims.width / dims.height) * h; }
-
-        photoDoc.addImage(data, 'JPEG', (210 - w) / 2, 30, w, h);
-        zipTarget.file(`${code}.pdf`, photoDoc.output('blob'));
-        console.log(`[ZIP SERVICE] Foto adicionada: ${code}.pdf`);
+        const blob = dataURLtoBlob(data);
+        zipTarget.file(`${code}.jpg`, blob);
+        console.log(`[ZIP SERVICE] Foto adicionada: ${code}.jpg`);
       } catch (err) {
         console.error(`[ZIP SERVICE] Erro ao processar foto ${code}:`, err);
       }
@@ -252,10 +230,10 @@ export const generateInspectionPDF = async (
       if (result.success) {
         return {
           success: true,
-          message: `Sucesso! Arquivo ${zipName} salvo na pasta 'Documentos' do seu celular.`
+          message: `Sucesso! ${result.message}: ${zipName}`
         };
       } else {
-        throw new Error("Falha ao gravar arquivo no sistema nativo.");
+        throw new Error(result.message);
       }
     } else {
       console.log("[ZIP SERVICE] Plataforma Browser detectada. Disparando download automático.");

@@ -48,13 +48,13 @@ const Camera: React.FC<CameraProps> = ({ onCapture, onClose, cameraId, isVideoMo
 
   const [navBarOffset, setNavBarOffset] = useState<number>(() => {
     const h = readNavBarCSS();
-    return h > 0 ? h + 24 : 200;
+    return h > 0 ? Math.max(h + 24, 80) : 200;
   });
 
   useEffect(() => {
     const update = () => {
       const h = readNavBarCSS();
-      if (h > 0) setNavBarOffset(h + 24);
+      if (h > 0) setNavBarOffset(Math.max(h + 24, 80));
     };
     update();
     window.visualViewport?.addEventListener('resize', update);
@@ -73,15 +73,23 @@ const Camera: React.FC<CameraProps> = ({ onCapture, onClose, cameraId, isVideoMo
         let mediaStream: MediaStream;
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: 'environment' } },
+            video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
             audio: isVideoMode,
           });
         } catch (err) {
-          console.log("Could not get environment camera, trying default", err);
-          mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: isVideoMode,
-          });
+          console.log("Could not get environment camera with resolution, trying without", err);
+          try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: { exact: 'environment' } },
+              audio: isVideoMode,
+            });
+          } catch (err2) {
+            console.log("Could not get environment camera, trying default", err2);
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: isVideoMode,
+            });
+          }
         }
         
         if (videoRef.current) {
@@ -190,8 +198,19 @@ const Camera: React.FC<CameraProps> = ({ onCapture, onClose, cameraId, isVideoMo
         if (context) {
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
           
-          const imageData = canvas.toDataURL('image/jpeg', 0.8);
-          
+          const MAX_BYTES = 2 * 1024 * 1024;
+          const estimateBytes = (d: string) =>
+            (d.length - d.indexOf(',') - 1) * 0.75;
+
+          // Uma única chamada inicial a 0.92 — reduz só se necessário
+          let imageData = canvas.toDataURL('image/jpeg', 0.92);
+          if (estimateBytes(imageData) > MAX_BYTES) {
+            imageData = canvas.toDataURL('image/jpeg', 0.85);
+            if (estimateBytes(imageData) > MAX_BYTES) {
+              imageData = canvas.toDataURL('image/jpeg', 0.75);
+            }
+          }
+
           onCapture(imageData, false);
         }
         

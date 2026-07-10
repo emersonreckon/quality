@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { PackageIcon, BoxIcon } from "lucide-react";
 
 interface SerialInputProps {
   onSerialSubmit: (serial: string, cabinetType: 'cabinet' | 'cabinet-with-cm') => void;
@@ -150,14 +149,6 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
                 </div>
               ))}
             </RadioGroup>
-          </div>
-
-          {/* INFO STRIP */}
-          <div className="bg-[#F4F4F4] rounded-[14px] p-[14px] flex items-start gap-3 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-            <div className="w-2 h-2 rounded-full bg-[#E5292F] mt-1 shrink-0"></div>
-            <p className="text-[12px] font-[400] text-[#9A9A9A] leading-[1.5] font-inter">
-              <span className="font-[600] text-[#1A1A1A]">{cabinetType === 'cabinet' ? 'Cabinet' : 'Cabinet with CM'}</span> selecionado — {cabinetType === 'cabinet' ? 'será verificada apenas a estrutura sem módulos.' : 'o módulo de controlo será verificado durante a inspeção.'}
-            </p>
           </div>
 
           {/* CTA BUTTON */}

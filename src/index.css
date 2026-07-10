@@ -178,3 +178,13 @@ button:focus {
 .animate-fade-out {
   animation: fadeOut 0.4s ease-out forwards;
 }
+
+/* Sonner toast — above Android nav bar */
+[data-sonner-toaster] {
+  padding-bottom: max(120px, env(safe-area-inset-bottom, 120px)) !important;
+  bottom: 0 !important;
+}
+
+[data-sonner-toast] {
+  margin-bottom: max(80px, env(safe-area-inset-bottom, 80px)) !important;
+}
