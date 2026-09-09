@@ -186,5 +186,6 @@ button:focus {
 }
 
 [data-sonner-toast] {
+  overflow: visible !important;
   margin-bottom: max(80px, env(safe-area-inset-bottom, 80px)) !important;
 }

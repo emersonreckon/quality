@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -11,7 +10,6 @@ import { ReferenceImageButton } from "@/components/ReferenceImageModal";
 import { generateInspectionPDF } from "@/utils/pdfUtils";
 import { generateMachineReportPDF } from "@/utils/machineInspectionReportPdf";
 import { InspectionItem } from "@/types/inspection";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { isNativePlatform, saveDraftRawFile, deleteDraftFolder } from "@/utils/nativeFileUtils";
@@ -35,7 +33,6 @@ interface FormData {
 
 const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetType, onReset, initialDraft }) => {
   const { toast: uiToast } = useToast();
-  const isMobile = useIsMobile();
   const currentDate = new Date().toLocaleDateString('pt-BR');
 
   console.log("InspectionForm: Component loaded with serial:", serialNumber, "type:", cabinetType);
@@ -261,8 +258,8 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
     setShowCamera(false);
 
     toast.success(
-      isVideo ? "Video gravado" : "da",
-      { description: `${isVideo ? "Video" : "Foto"} para ${currentCameraId} salvo com sucesso.`, closeButton: true }
+      isVideo ? "Video gravado" : "Foto capturada",
+      { description: `${isVideo ? "Video" : "Foto"} para ${currentCameraId} salvo com sucesso.` }
     );
   };
 
@@ -487,7 +484,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
       <div key={recordId} className="flex items-center gap-1">
         <Button
           variant="outline"
-          className={`${isMobile ? 'flex-1' : ''} flex items-center justify-center gap-2 ${isRecorded ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
+          className={`flex-1 flex items-center justify-center gap-2 ${isRecorded ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
           onClick={handleCaptureClick}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={(e) => { e.stopPropagation(); handleCaptureClick(e); }}
@@ -538,81 +535,47 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
       <div className="mb-8">
         <h3 className="text-lg font-medium mb-2">{title}</h3>
 
-        {isMobile ? (
-          <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item.id} className="bg-secondary/30 p-4 rounded-lg shadow-sm">
-                <div className="font-medium mb-3">{item.label}</div>
+        <div className="space-y-4">
+          {items.map((item) => (
+            <div key={item.id} className="bg-secondary/30 p-4 rounded-lg shadow-sm">
+              <div className="font-medium mb-3">{item.label}</div>
 
-                <div className="grid grid-cols-1 gap-3">
-                  {item.defaultRecord && (
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                        Registo video/foto
-                      </label>
-                      {renderCaptureButton(sectionSetter, item, sectionKey)}
-                    </div>
-                  )}
-
+              <div className="grid grid-cols-1 gap-3">
+                {item.defaultRecord && (
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                      Resultado
+                      Registo video/foto
                     </label>
-                    <label
-                      htmlFor={`check-${item.id}`}
-                      className={`flex items-center justify-between w-full h-9 px-3 rounded-md border cursor-pointer select-none transition-colors ${item.checked
-                          ? 'bg-green-500 border-green-500 text-white'
-                          : 'bg-background border-input text-muted-foreground'
-                        }`}
-                    >
-                      <span className="text-sm font-medium">
-                        {item.checked ? 'Verificado' : 'Por verificar'}
-                      </span>
-                      <Checkbox
-                        id={`check-${item.id}`}
-                        checked={item.checked}
-                        onCheckedChange={(value) => handleCheckedChange(sectionSetter, item.id, value === true)}
-                        className="border-white data-[state=checked]:bg-white data-[state=checked]:text-green-500 shrink-0"
-                      />
-                    </label>
+                    {renderCaptureButton(sectionSetter, item, sectionKey)}
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[10%] text-center">Verificado</TableHead>
-                <TableHead className="w-[60%]">Item</TableHead>
-                <TableHead className="w-[30%]">Registo video/foto</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="text-center">
+                )}
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Resultado
+                  </label>
+                  <label
+                    htmlFor={`check-${item.id}`}
+                    className={`flex items-center justify-between w-full h-9 px-3 rounded-md border cursor-pointer select-none transition-colors ${item.checked
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : 'bg-background border-input text-muted-foreground'
+                      }`}
+                  >
+                    <span className="text-sm font-medium">
+                      {item.checked ? 'Verificado' : 'Por verificar'}
+                    </span>
                     <Checkbox
                       id={`check-${item.id}`}
                       checked={item.checked}
                       onCheckedChange={(value) => handleCheckedChange(sectionSetter, item.id, value === true)}
-                      className="border-gray-400 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500 data-[state=checked]:text-white"
+                      className="border-white data-[state=checked]:bg-white data-[state=checked]:text-green-500 shrink-0"
                     />
-                  </TableCell>
-                  <TableCell>
-                    <label htmlFor={`check-${item.id}`} className="cursor-pointer">
-                      {item.label}
-                    </label>
-                  </TableCell>
-                  <TableCell>
-                    {item.defaultRecord ? renderCaptureButton(sectionSetter, item, sectionKey) : null}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+                  </label>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };

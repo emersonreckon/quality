@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Capacitor } from '@capacitor/core';
+import { BarcodeScanner, BarcodeFormat } from '@capacitor-mlkit/barcode-scanning';
 
 interface SerialInputProps {
   onSerialSubmit: (serial: string, cabinetType: 'cabinet' | 'cabinet-with-cm') => void;
@@ -14,6 +16,37 @@ interface SerialInputProps {
 const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) => {
   const [serialNumber, setSerialNumber] = useState<string>('');
   const [cabinetType, setCabinetType] = useState<'cabinet' | 'cabinet-with-cm'>('cabinet-with-cm');
+  const [isScanning, setIsScanning] = useState(false);
+  const isNative = Capacitor.isNativePlatform();
+
+  const handleScan = async () => {
+    setIsScanning(true);
+    try {
+      const { camera } = await BarcodeScanner.checkPermissions();
+      if (camera === 'denied') {
+        toast.error("Permissão de câmera necessária para fazer scan");
+        return;
+      }
+      if (camera !== 'granted') {
+        const { camera: granted } = await BarcodeScanner.requestPermissions();
+        if (granted !== 'granted') {
+          toast.error("Permissão de câmera necessária para fazer scan");
+          return;
+        }
+      }
+      const { barcodes } = await BarcodeScanner.scan({
+        formats: [BarcodeFormat.Code128, BarcodeFormat.Code39, BarcodeFormat.Ean13],
+      });
+      if (barcodes.length > 0 && barcodes[0].rawValue) {
+        const raw = barcodes[0].rawValue;
+        setSerialNumber(raw.startsWith('SN_') ? raw : `SN_${raw}`);
+      }
+    } catch {
+      toast.error("Não foi possível iniciar o scanner");
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,13 +110,37 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
               <Input
                 id="serial"
                 type="text"
-                placeholder="Ex: SR_1234567890"
+                placeholder="Ex: SN_1234567890"
                 value={serialNumber}
                 onChange={(e) => setSerialNumber(e.target.value)}
                 autoComplete="off"
-                className="h-[52px] w-full border-[1.5px] border-[#E8E8E8] rounded-[14px] pl-12 pr-4 text-[15px] font-[500] focus-visible:border-[#E5292F] focus-visible:ring-[#E5292F]/10 focus-visible:ring-offset-0 transition-all font-inter"
+                className={`h-[52px] w-full border-[1.5px] border-[#E8E8E8] rounded-[14px] pl-12 text-[15px] font-[500] focus-visible:border-[#E5292F] focus-visible:ring-[#E5292F]/10 focus-visible:ring-offset-0 transition-all font-inter ${isNative ? 'pr-12' : 'pr-4'}`}
                 disabled={isLoading}
               />
+              {isNative && (
+                <button
+                  type="button"
+                  onClick={handleScan}
+                  disabled={isLoading || isScanning}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-[10px] bg-[#F4F4F4] text-[#9A9A9A] hover:bg-[#FCEAEA] hover:text-[#E5292F] active:scale-95 transition-all disabled:opacity-40"
+                  aria-label="Scan código de barras"
+                >
+                  {isScanning ? (
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                      <path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                      <line x1="7" y1="12" x2="7" y2="12.01" /><line x1="12" y1="8" x2="12" y2="16" />
+                      <line x1="17" y1="12" x2="17" y2="12.01" /><line x1="7" y1="8" x2="7" y2="16" />
+                      <line x1="12" y1="12" x2="17" y2="12" />
+                    </svg>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
