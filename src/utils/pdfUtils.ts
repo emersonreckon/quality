@@ -70,7 +70,8 @@ export const generateInspectionPDF = async (
   reportPdfBlob: Blob | null = null,
   returnBlob: boolean = false,
   cabinetType: 'cabinet' | 'cabinet-with-cm' = 'cabinet-with-cm',
-  additionalNotes: string = ''
+  additionalNotes: string = '',
+  machineType: 'rework' | 'nls' = 'rework'
 ): Promise<{ success: boolean, message: string, pdfBlob?: string }> => {
 
   console.log("[ZIP SERVICE] Iniciando processo completo de geração");
@@ -99,9 +100,10 @@ export const generateInspectionPDF = async (
     doc.setFontSize(10);
     doc.text(`Técnico Resp.: ${formData.technicianName}`, 14, 30);
     doc.text(`Data: ${formData.date}`, 14, 35);
-    doc.text(`Armário S/N: ${formData.cabinetSN}`, 14, 40);
+    doc.text(`Tipo de Máquina: ${machineType === 'nls' ? 'NLS' : 'Rework'}`, 14, 40);
+    doc.text(`Armário S/N: ${formData.cabinetSN}`, 14, 45);
 
-    let yPos = 45;
+    let yPos = 50;
     if (cabinetType === 'cabinet-with-cm') {
       doc.text(`Control Module S/N: ${formData.controlModuleSN}`, 14, yPos);
       yPos += 5;

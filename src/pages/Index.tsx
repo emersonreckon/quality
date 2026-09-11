@@ -14,12 +14,14 @@ import { loadFullDraft, LoadedDraft } from '@/utils/draftUtils';
 const Index = () => {
   const [serialNumber, setSerialNumber] = useLocalStorage<string>('photoApp_serialNumber', '');
   const [cabinetType, setCabinetType] = useLocalStorage<'cabinet' | 'cabinet-with-cm'>('photoApp_cabinetType', 'cabinet-with-cm');
+  const [machineType, setMachineType] = useLocalStorage<'rework' | 'nls'>('photoApp_machineType', 'rework');
   const [showInspectionForm, setShowInspectionForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Estados de rascunho
   const [pendingSerial, setPendingSerial] = useState('');
   const [pendingCabinetType, setPendingCabinetType] = useState<'cabinet' | 'cabinet-with-cm'>('cabinet-with-cm');
+  const [pendingMachineType, setPendingMachineType] = useState<'rework' | 'nls'>('rework');
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [loadedDraft, setLoadedDraft] = useState<LoadedDraft | null>(null);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
@@ -55,8 +57,8 @@ const Index = () => {
     window.open(currentUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleSerialSubmit = async (serial: string, type: 'cabinet' | 'cabinet-with-cm') => {
-    console.log("Index: handleSerialSubmit called with serial:", serial, "type:", type);
+  const handleSerialSubmit = async (serial: string, type: 'cabinet' | 'cabinet-with-cm', machine: 'rework' | 'nls') => {
+    console.log("Index: handleSerialSubmit called with serial:", serial, "machine:", machine, "type:", type);
     setIsLoading(true);
 
     try {
@@ -66,6 +68,7 @@ const Index = () => {
         if (draftExists) {
           setPendingSerial(serial);
           setPendingCabinetType(type);
+          setPendingMachineType(machine);
           setShowDraftDialog(true);
           return;
         }
@@ -73,6 +76,7 @@ const Index = () => {
 
       setSerialNumber(serial);
       setCabinetType(type);
+      setMachineType(machine);
       setLoadedDraft(null);
       setShowInspectionForm(true);
       console.log("Index: Serial and type stored, inspection form shown");
@@ -96,6 +100,7 @@ const Index = () => {
       }
       setSerialNumber(targetSerial);
       setCabinetType(draft?.json.cabinetType ?? pendingCabinetType);
+      setMachineType(draft?.json.machineType ?? pendingMachineType);
       setLoadedDraft(draft);
       setShowDraftDialog(false);
       setShowInspectionForm(true);
@@ -111,6 +116,7 @@ const Index = () => {
     await deleteDraftFolder(pendingSerial);
     setSerialNumber(pendingSerial);
     setCabinetType(pendingCabinetType);
+    setMachineType(pendingMachineType);
     setLoadedDraft(null);
     setShowDraftDialog(false);
     setShowInspectionForm(true);
@@ -121,6 +127,7 @@ const Index = () => {
       console.log("Index: Resetting session");
       setSerialNumber('');
       setCabinetType('cabinet-with-cm');
+      setMachineType('rework');
       setShowInspectionForm(false);
       setLoadedDraft(null);
     }
@@ -131,34 +138,40 @@ const Index = () => {
 
     setSerialNumber('');
     setCabinetType('cabinet-with-cm');
+    setMachineType('rework');
     setShowInspectionForm(false);
     setLoadedDraft(null);
 
     toast.success("Inspeção finalizada", {
       description: "Formulário reseteado. Pronto para nova inspeção."
     });
-  }, [setSerialNumber, setCabinetType]);
+  }, [setSerialNumber, setCabinetType, setMachineType]);
 
   console.log("Index: Current state:", {
     serialNumber,
     cabinetType,
+    machineType,
     showInspectionForm,
     isLoading
   });
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9F9F9] antialiased">
-      <Header
-        serialNumber={serialNumber}
-        resetSession={resetSession}
-        onLogoClick={showInspectionForm ? () => {
-          if (window.confirm('Tens a certeza que queres sair? O progresso não guardado será perdido.')) {
-            handleFormReset();
-          }
-        } : undefined}
-      />
+      {/* TEMP: Header oculto apenas na tela inicial — reverter removendo esta condição */}
+      {showInspectionForm && (
+        <Header
+          serialNumber={serialNumber}
+          resetSession={resetSession}
+          onLogoClick={() => {
+            if (window.confirm('Tens a certeza que queres sair? O progresso não guardado será perdido.')) {
+              handleFormReset();
+            }
+          }}
+        />
+      )}
 
-      <main className="flex-1 flex flex-col items-center justify-start py-8 px-4 sm:px-6 animate-fade-in overflow-auto">
+      {/* TEMP: padding removido apenas na tela inicial para o card ocupar a tela cheia no telemóvel — reverter junto com o Header */}
+      <main className={`flex-1 flex flex-col justify-start animate-fade-in overflow-auto ${showInspectionForm ? 'items-center py-8 px-4 sm:px-6' : 'items-stretch sm:items-center sm:py-8 sm:px-6'}`}>
         {!showInspectionForm ? (
           <>
             <WelcomeScreen
@@ -205,6 +218,7 @@ const Index = () => {
           <InspectionForm
             serialNumber={serialNumber}
             cabinetType={cabinetType}
+            machineType={machineType}
             onReset={handleFormReset}
             initialDraft={loadedDraft ?? undefined}
           />

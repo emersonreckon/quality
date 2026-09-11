@@ -9,12 +9,13 @@ import { Capacitor } from '@capacitor/core';
 import { BarcodeScanner, BarcodeFormat } from '@capacitor-mlkit/barcode-scanning';
 
 interface SerialInputProps {
-  onSerialSubmit: (serial: string, cabinetType: 'cabinet' | 'cabinet-with-cm') => void;
+  onSerialSubmit: (serial: string, cabinetType: 'cabinet' | 'cabinet-with-cm', machineType: 'rework' | 'nls') => void;
   isLoading: boolean;
 }
 
 const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) => {
   const [serialNumber, setSerialNumber] = useState<string>('');
+  const [machineType, setMachineType] = useState<'rework' | 'nls' | null>(null);
   const [cabinetType, setCabinetType] = useState<'cabinet' | 'cabinet-with-cm'>('cabinet-with-cm');
   const [isScanning, setIsScanning] = useState(false);
   const isNative = Capacitor.isNativePlatform();
@@ -56,16 +57,22 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
       return;
     }
 
-    console.log("SerialInput: Submitting with serial:", serialNumber, "type:", cabinetType);
-    onSerialSubmit(serialNumber.trim(), cabinetType);
+    if (!machineType) {
+      toast.error("Por favor, selecione o tipo de máquina");
+      return;
+    }
+
+    console.log("SerialInput: Submitting with serial:", serialNumber, "machine:", machineType, "type:", cabinetType);
+    onSerialSubmit(serialNumber.trim(), cabinetType, machineType);
 
     toast.success("Iniciando inspeção", {
-      description: `Tipo: ${cabinetType === 'cabinet' ? 'Cabinet' : 'Cabinet with CM'}`
+      description: `${machineType === 'rework' ? 'Rework' : 'NLS'} · ${cabinetType === 'cabinet' ? 'Cabinet' : 'Cabinet with CM'}`
     });
   };
 
   return (
-    <div className="w-full max-w-[480px] mx-auto overflow-hidden bg-white shadow-xl rounded-[32px] sm:rounded-[40px] flex flex-col relative">
+    // TEMP: cartão em tela cheia no telemóvel (sem cantos/sombra/limite de largura) — reverter junto com o Header
+    <div className="w-full min-h-screen sm:min-h-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
       <form onSubmit={handleSubmit} className="flex flex-col">
 
         {/* HERO SECTION */}
@@ -144,61 +151,52 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
             </div>
           </div>
 
-          {/* CABINET TYPE SECTION */}
+          {/* MACHINE TYPE SECTION */}
           <div className="space-y-4 animate-fade-up" style={{ animationDelay: '0.14s' }}>
             <Label className="text-[11px] font-[700] uppercase tracking-[1px] text-[#9A9A9A] font-inter">
-              Tipo de Cabinet
+              Tipo de Máquina
             </Label>
             <RadioGroup
-              value={cabinetType}
-              onValueChange={(value) => setCabinetType(value as 'cabinet' | 'cabinet-with-cm')}
+              value={machineType ?? undefined}
+              onValueChange={(value) => setMachineType(value as 'rework' | 'nls')}
               className="grid grid-cols-1 gap-3"
               disabled={isLoading}
             >
               {[
                 {
-                  id: 'cabinet',
-                  title: 'Cabinet',
-                  desc: 'Sem módulo de controle',
+                  id: 'rework',
+                  title: 'Rework',
                   icon: (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <line x1="3" y1="9" x2="21" y2="9" />
-                      <line x1="9" y1="21" x2="9" y2="9" />
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 12a9 9 0 1 0 2.6-6.3" />
+                      <path d="M3 5v5h5" />
                     </svg>
                   )
                 },
                 {
-                  id: 'cabinet-with-cm',
-                  title: 'Cabinet with CM',
-                  desc: 'Com módulo de controle completo',
+                  id: 'nls',
+                  title: 'NLS',
                   icon: (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <path d="M3 9h18" />
-                      <path d="M9 21V9" />
-                      <path d="M14 14l2 2 4-4" />
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="16" rx="2" />
+                      <path d="M3 10h18" />
+                      <path d="M8 4v6" />
                     </svg>
                   )
                 }
               ].map((opt) => (
                 <div key={opt.id} className="relative active:scale-[0.98] transition-transform">
-                  <RadioGroupItem value={opt.id} id={opt.id} className="peer sr-only" />
+                  <RadioGroupItem value={opt.id} id={`machine-${opt.id}`} className="peer sr-only" />
                   <Label
-                    htmlFor={opt.id}
+                    htmlFor={`machine-${opt.id}`}
                     className="flex items-center gap-4 border-[1.5px] border-[#E8E8E8] rounded-[20px] p-[18px] cursor-pointer transition-all peer-data-[state=checked]:border-[#E5292F] peer-data-[state=checked]:bg-[#FCEAEA] peer-data-[state=checked]:shadow-[0_0_0_3px_rgba(229,41,47,0.12)] group hover:border-[#E5292F]/50"
                   >
                     <div className="w-[52px] h-[52px] rounded-[14px] bg-[#F4F4F4] flex items-center justify-center transition-colors peer-data-[state=checked]:bg-[#E5292F]/14 text-[#9A9A9A] peer-data-[state=checked]:text-[#E5292F]">
                       {opt.icon}
                     </div>
-                    <div className="flex-1 space-y-0.5">
-                      <p className="text-[15px] font-[700] text-[#1A1A1A] peer-data-[state=checked]:text-[#A3272B] font-inter">
-                        {opt.title}
-                      </p>
-                      <p className="text-[12px] font-[400] text-[#9A9A9A] font-inter">
-                        {opt.desc}
-                      </p>
-                    </div>
+                    <p className="flex-1 text-[15px] font-[700] text-[#1A1A1A] peer-data-[state=checked]:text-[#A3272B] font-inter">
+                      {opt.title}
+                    </p>
                     <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] flex items-center justify-center transition-all peer-data-[state=checked]:border-[#E5292F]">
                       <div className="w-[10px] h-[10px] rounded-full bg-[#E5292F] opacity-0 scale-50 transition-all peer-data-[state=checked]:opacity-100 peer-data-[state=checked]:scale-100"></div>
                     </div>
@@ -206,15 +204,89 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
                 </div>
               ))}
             </RadioGroup>
+            {!machineType && (
+              <p className="flex items-center gap-1.5 text-[12px] text-[#9A9A9A] font-inter">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                Escolha o tipo de máquina para continuar
+              </p>
+            )}
           </div>
+
+          {/* CABINET TYPE SECTION */}
+          {machineType && (
+            <div className="space-y-4 animate-fade-up" style={{ animationDelay: '0s' }}>
+              <Label className="text-[11px] font-[700] uppercase tracking-[1px] text-[#9A9A9A] font-inter">
+                Tipo de Cabinet
+              </Label>
+              <RadioGroup
+                value={cabinetType}
+                onValueChange={(value) => setCabinetType(value as 'cabinet' | 'cabinet-with-cm')}
+                className="grid grid-cols-1 gap-3"
+                disabled={isLoading}
+              >
+                {[
+                  {
+                    id: 'cabinet',
+                    title: 'Cabinet',
+                    desc: 'Sem módulo de controle',
+                    icon: (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <line x1="3" y1="9" x2="21" y2="9" />
+                        <line x1="9" y1="21" x2="9" y2="9" />
+                      </svg>
+                    )
+                  },
+                  {
+                    id: 'cabinet-with-cm',
+                    title: 'Cabinet with CM',
+                    desc: 'Com módulo de controle completo',
+                    icon: (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <path d="M3 9h18" />
+                        <path d="M9 21V9" />
+                        <path d="M14 14l2 2 4-4" />
+                      </svg>
+                    )
+                  }
+                ].map((opt) => (
+                  <div key={opt.id} className="relative active:scale-[0.98] transition-transform">
+                    <RadioGroupItem value={opt.id} id={opt.id} className="peer sr-only" />
+                    <Label
+                      htmlFor={opt.id}
+                      className="flex items-center gap-4 border-[1.5px] border-[#E8E8E8] rounded-[20px] p-[18px] cursor-pointer transition-all peer-data-[state=checked]:border-[#E5292F] peer-data-[state=checked]:bg-[#FCEAEA] peer-data-[state=checked]:shadow-[0_0_0_3px_rgba(229,41,47,0.12)] group hover:border-[#E5292F]/50"
+                    >
+                      <div className="w-[52px] h-[52px] rounded-[14px] bg-[#F4F4F4] flex items-center justify-center transition-colors peer-data-[state=checked]:bg-[#E5292F]/14 text-[#9A9A9A] peer-data-[state=checked]:text-[#E5292F]">
+                        {opt.icon}
+                      </div>
+                      <div className="flex-1 space-y-0.5">
+                        <p className="text-[15px] font-[700] text-[#1A1A1A] peer-data-[state=checked]:text-[#A3272B] font-inter">
+                          {opt.title}
+                        </p>
+                        <p className="text-[12px] font-[400] text-[#9A9A9A] font-inter">
+                          {opt.desc}
+                        </p>
+                      </div>
+                      <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] flex items-center justify-center transition-all peer-data-[state=checked]:border-[#E5292F]">
+                        <div className="w-[10px] h-[10px] rounded-full bg-[#E5292F] opacity-0 scale-50 transition-all peer-data-[state=checked]:opacity-100 peer-data-[state=checked]:scale-100"></div>
+                      </div>
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
 
           {/* CTA BUTTON */}
           <div className="pt-2 animate-fade-up" style={{ animationDelay: '0.28s' }}>
             <Button
               type="submit"
-              disabled={isLoading || serialNumber.trim().length <= 3}
+              disabled={isLoading || serialNumber.trim().length <= 3 || !machineType}
               className={`w-full h-auto py-[18px] rounded-[20px] font-inter text-[15px] font-[700] tracking-[0.3px] transition-all flex items-center justify-center gap-3 active:scale-[0.97]
-                ${serialNumber.trim().length > 3
+                ${serialNumber.trim().length > 3 && machineType
                   ? 'bg-[#E5292F] text-white shadow-[0_6px_20px_rgba(229,41,47,0.35)] hover:bg-[#A3272B] hover:shadow-[0_8px_24px_rgba(229,41,47,0.45)]'
                   : 'bg-[#E8E8E8] text-[#9A9A9A] cursor-not-allowed shadow-none'
                 }`}

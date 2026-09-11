@@ -30,3 +30,4 @@ node_modules/
 dist/
 build/
 *.apk
+docs/

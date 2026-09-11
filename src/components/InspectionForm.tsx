@@ -18,6 +18,7 @@ import { DraftJSON, LoadedDraft, jsonToBase64 } from "@/utils/draftUtils";
 interface InspectionFormProps {
   serialNumber: string;
   cabinetType: 'cabinet' | 'cabinet-with-cm';
+  machineType: 'rework' | 'nls';
   onReset: () => void;
   initialDraft?: LoadedDraft;
 }
@@ -31,11 +32,122 @@ interface FormData {
   assistantTechnician: string;
 }
 
-const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetType, onReset, initialDraft }) => {
+// Rework — 1. Armário
+const REWORK_CABINET_ITEMS: InspectionItem[] = [
+  { id: "1.1", label: "1.1. Marcar o aperto dos parafusos do trinco inferior (lógica de selagem)", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "1.2", label: "1.2. Verificar a correcta aplicação do sistema do trinco inferior, com foto lateral e frontal do mesmo", defaultRecord: "TI_F1,TI_F2", checked: false, photoTaken: false },
+  { id: "1.3", label: "1.3. Verificação da passagem de cabos no interior e exterior, tal como a sua ancoragem. Confirmar que não existe entalamento de cabos, nomeadamente junto da chapa de topo no interior. (Usar camera endoscopica)", defaultRecord: "AO_F1", checked: false, photoTaken: false },
+  { id: "1.4", label: "1.4. Verificar funcionamento de trinco inferior", defaultRecord: "AO_V1", checked: false, photoTaken: false },
+  { id: "1.5", label: "1.5. Verificar funcionamento de trinco superior", defaultRecord: "AO_V2", checked: false, photoTaken: false },
+  { id: "1.6", label: "1.6. Verificar a abertura/fecho de porta", defaultRecord: "AO_V3", checked: false, photoTaken: false },
+  { id: "1.7", label: "1.7. Verificar a abertura manual do trinco inferior", defaultRecord: "AO_V1", checked: false, photoTaken: false },
+  { id: "1.8", label: "1.8. Verificar e validar o espaçamento entre as prateleiras e o fundo do armário", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "1.9", label: "1.9. Verifica a aplicação das etiquetas de SN", defaultRecord: "AO_F2", checked: false, photoTaken: false },
+  { id: "1.10", label: "1.10. Verificar que está aplicada a chapa de espaçamento ao módulo, do lado do puxador (aplicável apenas nos armários sem módulo)", defaultRecord: "AO_F3", checked: false, photoTaken: false },
+  { id: "1.11", label: "1.11. Abrir a porta ao máximo largar e verificar que a porta fecha e que os sensores estão no estado correto.", defaultRecord: "", checked: false, photoTaken: false },
+];
+
+// Rework — 2. Prateleira
+const REWORK_SHELF_ITEMS: InspectionItem[] = [
+  { id: "2.1", label: "2.1. Verificar a correta amarração dos cabos", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "2.2", label: "2.2. Verificar a posição do sensor de temperatura", defaultRecord: "PA_F1", checked: false, photoTaken: false },
+  { id: "2.3", label: "2.3. Validar funcionamento de LEDs", defaultRecord: "PA_F3", checked: false, photoTaken: false },
+  { id: "2.4", label: "2.4. Garantir que estão aplicadas as abraçadeiras de fixação da prateleira ao rail lateral", defaultRecord: "PA_F3", checked: false, photoTaken: false },
+  { id: "2.5", label: "2.5. Confirmar que a tampa superior não tem empenos", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "2.6", label: "2.6. Verificar a aplicação das etiquetas de SN", defaultRecord: "", checked: false, photoTaken: false },
+];
+
+// Rework — 3. Control Module
+const REWORK_CONTROL_MODULE_ITEMS: InspectionItem[] = [
+  { id: "3.1", label: "3.1. Verificar o correto suporte do módulo na parte inferior e a aplicação das chapas de aperto superior", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "3.2", label: "3.2. Verificação geral da montagem dos componentes (mecânicos e electricos/electrónicos)", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
+  { id: "3.3", label: "3.3. Verificar a boa conexão de todos os conectores da MB", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
+  { id: "3.4", label: "3.4. Verificar a conexão entre placa MB e EL", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
+  { id: "3.5", label: "3.5. Verificar a aplicação das etiquetas de SN", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
+  { id: "3.6", label: "3.6. Verificar a boa conexão de todos cabos ethernet ligados aos switchs", defaultRecord: "CM_F1_2", checked: false, photoTaken: false },
+  { id: "3.7", label: "3.7. Verificar a boa fixação das fontes PSU", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "3.8", label: "3.8. Verificação da passagem de cabos e a sua amarração na parte móvel", defaultRecord: "CM_F2_1", checked: false, photoTaken: false },
+  { id: "3.9", label: "3.9. Verificação da amarração dos cabos das prateleiras no interior do módulo", defaultRecord: "CM_F2_2", checked: false, photoTaken: false },
+  { id: "3.10", label: "3.10. Verificar a alimentação de todos os switchs de rede", defaultRecord: "CM_F1_2", checked: false, photoTaken: false },
+  { id: "3.11", label: "3.11. Verificação da uniformidade das folgas da gaveta", defaultRecord: "CM_F3", checked: false, photoTaken: false },
+  { id: "3.12", label: "3.12. Verificar o funcionamento do trinco da gaveta e a presença de chave", defaultRecord: "CM_F3", checked: false, photoTaken: false },
+  { id: "3.13", label: "3.13. Verificação da ligação elétrica nas tomadas do módulo", defaultRecord: "CM_F4", checked: false, photoTaken: false },
+  { id: "3.14", label: "3.14. Verificar funcionamento do router instalado", defaultRecord: "CM_F5", checked: false, photoTaken: false },
+  { id: "3.15", label: "3.15. Verificar a aplicação da chapa e do terminal de pagamento (questionar se aplicável)", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "3.16", label: "3.16. Verificar a saída de cabo de alimentação geral pela parte inferior do módulo e garantir o correto posicionamento, para não ficar esmagado na palete", defaultRecord: "CM_F6", checked: false, photoTaken: false },
+];
+
+// Rework — 4. Geral
+const REWORK_GENERAL_ITEMS: InspectionItem[] = [
+  { id: "4.1", label: "4.1. Inspeção geral das estruturas do módulo, prateleiras e armário", defaultRecord: "GL_F1", checked: false, photoTaken: false },
+  { id: "4.2", label: "4.2. Verificação geral de pintura", defaultRecord: "GL_F2", checked: false, photoTaken: false },
+  { id: "4.3", label: "4.3. Verificar presença da chave do CM junto dos documentos da máquina", defaultRecord: "GL_F3", checked: false, photoTaken: false },
+  { id: "4.4", label: "4.4. Verificação da presença do calço entre a porta e a grelha inferior.", defaultRecord: "GL_F4", checked: false, photoTaken: false },
+  { id: "4.5", label: "4.5. Conectar cabo do armário numa das tomadas do módulo e verificar o funcionamento (frio e ventilação)", defaultRecord: "", checked: false, photoTaken: false },
+];
+
+// Packaging — igual para Rework e NLS
+const PACKAGING_ITEMS: InspectionItem[] = [
+  { id: "5.1", label: "5.1. Verificar a ancoragem dos cabos e a aplicação das placas de esferovite", defaultRecord: "PK_F1", checked: false, photoTaken: false },
+  { id: "5.2", label: "5.2. Verificar o embalamento final", defaultRecord: "PK_F2", checked: false, photoTaken: false },
+];
+
+// NLS — 1. Armário
+const NLS_CABINET_ITEMS: InspectionItem[] = [
+  { id: "1.1", label: "1.1. Verificar a correcta aplicação do sistema do trinco, com foto frontal do mesmo", defaultRecord: "TI_F1", checked: false, photoTaken: false },
+  { id: "1.2", label: "1.2. Verificação da passagem de cabos no interior e exterior, tal como a sua ancoragem. Confirmar que não existe entalamento de cabos, nomeadamente junto da chapa de topo no interior. (Usar camera endoscopica)", defaultRecord: "AO_F1", checked: false, photoTaken: false },
+  { id: "1.3", label: "1.3. Verificar funcionamento de trinco", defaultRecord: "AO_V1", checked: false, photoTaken: false },
+  { id: "1.4", label: "1.4. Verificar a abertura/fecho de porta", defaultRecord: "AO_V3", checked: false, photoTaken: false },
+  { id: "1.5", label: "1.5. Verificar a abertura manual do trinco", defaultRecord: "AO_V1", checked: false, photoTaken: false },
+  { id: "1.6", label: "1.6. Verificar e validar o espaçamento entre as prateleiras e o fundo do armário", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "1.7", label: "1.7. Verifica a aplicação das etiquetas de SN", defaultRecord: "AO_F2", checked: false, photoTaken: false },
+  { id: "1.8", label: "1.8. Verificar que estão aplicadas as chapas de espaçamento do módulo.", defaultRecord: "AO_F3", checked: false, photoTaken: false },
+  { id: "1.9", label: "1.9. Abrir a porta ao máximo largar e verificar que a porta fecha e que os sensores estão no estado correto.", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "1.10", label: "1.10. Verificar se o sensor está com um espaçamento de 3/5mm da outra parte.", defaultRecord: "AO_F4", checked: false, photoTaken: false },
+];
+
+// NLS — 2. Prateleira
+const NLS_SHELF_ITEMS: InspectionItem[] = [
+  { id: "2.1", label: "2.1. Verificar a correta amarração dos cabos", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "2.2", label: "2.2. Verificar a posição do sensor de temperatura", defaultRecord: "PA_F1", checked: false, photoTaken: false },
+  { id: "2.3", label: "2.3. Validar funcionamento de LEDs", defaultRecord: "PA_F3", checked: false, photoTaken: false },
+  { id: "2.4", label: "2.4. Garantir que estão aplicadas as abraçadeiras de fixação da prateleira ao rail lateral", defaultRecord: "PA_F3", checked: false, photoTaken: false },
+  { id: "2.5", label: "2.5. Confirmar que a tampa superior não tem empenos", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "2.6", label: "2.6. Verificar a aplicação das etiquetas de SN", defaultRecord: "", checked: false, photoTaken: false },
+];
+
+// NLS — 3. Control Module
+const NLS_CONTROL_MODULE_ITEMS: InspectionItem[] = [
+  { id: "3.1", label: "3.1. Verificar o correto suporte do módulo na parte inferior e a aplicação das chapas de aperto superior", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "3.2", label: "3.2. Verificação geral da montagem dos componentes (mecânicos e electricos/electrónicos)", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
+  { id: "3.3", label: "3.3. Verificar a boa conexão de todos os conectores da MB", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
+  { id: "3.4", label: "3.4. Verificar a conexão entre placa MB e EL", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
+  { id: "3.5", label: "3.5. Verificar a aplicação das etiquetas de SN", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
+  { id: "3.6", label: "3.6. Verificar a boa conexão de todos cabos ethernet ligados aos switchs", defaultRecord: "CM_F1_2", checked: false, photoTaken: false },
+  { id: "3.7", label: "3.7. Verificar a boa fixação das fontes PSU", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "3.8", label: "3.8. Verificação da passagem de cabos e a sua amarração na parte móvel", defaultRecord: "CM_F2_1", checked: false, photoTaken: false },
+  { id: "3.9", label: "3.9. Verificação da amarração dos cabos das prateleiras no interior do módulo", defaultRecord: "CM_F2_2", checked: false, photoTaken: false },
+  { id: "3.10", label: "3.10. Verificar a alimentação de todos os switchs de rede", defaultRecord: "CM_F1_2", checked: false, photoTaken: false },
+  { id: "3.11", label: "3.11. Verificação da uniformidade das folgas da gaveta", defaultRecord: "CM_F3", checked: false, photoTaken: false },
+  { id: "3.12", label: "3.12. Verificar o funcionamento do trinco da gaveta e a presença de chave", defaultRecord: "CM_F3", checked: false, photoTaken: false },
+  { id: "3.13", label: "3.13. Verificar funcionamento do router instalado", defaultRecord: "CM_F5", checked: false, photoTaken: false },
+  { id: "3.14", label: "3.14. Verificar a aplicação da chapa e do terminal de pagamento (questionar se aplicável)", defaultRecord: "", checked: false, photoTaken: false },
+];
+
+// NLS — 4. Geral (4.1 acumula as fotos GL_F1-F4, que no Rework eram 4 itens separados)
+const NLS_GENERAL_ITEMS: InspectionItem[] = [
+  { id: "4.1", label: "4.1. Inspeção geral das estruturas do módulo, prateleiras e armário", defaultRecord: "GL_F1,GL_F2,GL_F3,GL_F4", checked: false, photoTaken: false },
+  { id: "4.2", label: "4.2. Verificação geral de pintura", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "4.3", label: "4.3. Verificar presença da chave do CM junto dos documentos da máquina", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "4.4", label: "4.4. Verificação da presença do calço entre a porta e a grelha inferior.", defaultRecord: "", checked: false, photoTaken: false },
+  { id: "4.5", label: "4.5. Conectar cabo do armário numa das tomadas do módulo e verificar o funcionamento (frio e ventilação)", defaultRecord: "", checked: false, photoTaken: false },
+];
+
+const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetType, machineType, onReset, initialDraft }) => {
   const { toast: uiToast } = useToast();
   const currentDate = new Date().toLocaleDateString('pt-BR');
 
-  console.log("InspectionForm: Component loaded with serial:", serialNumber, "type:", cabinetType);
+  console.log("InspectionForm: Component loaded with serial:", serialNumber, "machine:", machineType, "type:", cabinetType);
 
   const [formData, setFormData] = useState<FormData>({
     technicianName: "",
@@ -103,65 +215,22 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
     setVideoData(videoMap);
   }, [initialDraft, serialNumber]);
 
+  const isNls = machineType === 'nls';
+
   // 1. Armário
-  const [cabinetItems, setCabinetItems] = useState<InspectionItem[]>([
-    { id: "1.1", label: "1.1. Marcar o aperto dos parafusos do trinco inferior (lógica de selagem)", defaultRecord: "", checked: false, photoTaken: false },
-    { id: "1.2", label: "1.2. Verificar a correcta aplicação do sistema do trinco inferior, com foto lateral e frontal do mesmo", defaultRecord: "TI_F1,TI_F2", checked: false, photoTaken: false },
-    { id: "1.3", label: "1.3. Verificação da passagem de cabos no interior e exterior, tal como a sua ancoragem. Confirmar que não existe entalamento de cabos, nomeadamente junto da chapa de topo no interior. (Usar camera endoscopica)", defaultRecord: "AO_F1", checked: false, photoTaken: false },
-    { id: "1.4", label: "1.4. Verificar funcionamento de trinco inferior", defaultRecord: "AO_V1", checked: false, photoTaken: false },
-    { id: "1.5", label: "1.5. Verificar funcionamento de trinco superior", defaultRecord: "AO_V2", checked: false, photoTaken: false },
-    { id: "1.6", label: "1.6. Verificar a abertura/fecho de porta", defaultRecord: "AO_V3", checked: false, photoTaken: false },
-    { id: "1.7", label: "1.7. Verificar a abertura manual do trinco inferior", defaultRecord: "AO_V1", checked: false, photoTaken: false },
-    { id: "1.8", label: "1.8. Verificar e validar o espaçamento entre as prateleiras e o fundo do armário", defaultRecord: "", checked: false, photoTaken: false },
-    { id: "1.9", label: "1.9. Verifica a aplicação das etiquetas de SN", defaultRecord: "AO_F2", checked: false, photoTaken: false },
-    { id: "1.10", label: "1.10. Verificar que está aplicada a chapa de espaçamento ao módulo, do lado do puxador (aplicável apenas nos armários sem módulo)", defaultRecord: "AO_F3", checked: false, photoTaken: false },
-    { id: "1.11", label: "1.11. Abrir a porta ao máximo largar e verificar que a porta fecha e que os sensores estão no estado correto.", defaultRecord: "", checked: false, photoTaken: false },
-  ]);
+  const [cabinetItems, setCabinetItems] = useState<InspectionItem[]>(isNls ? NLS_CABINET_ITEMS : REWORK_CABINET_ITEMS);
 
   // 2. Prateleira
-  const [shelfItems, setShelfItems] = useState<InspectionItem[]>([
-    { id: "2.1", label: "2.1. Verificar a correta amarração dos cabos", defaultRecord: "", checked: false, photoTaken: false },
-    { id: "2.2", label: "2.2. Verificar a posição do sensor de temperatura", defaultRecord: "PA_F1", checked: false, photoTaken: false },
-    { id: "2.3", label: "2.3. Validar funcionamento de LEDs", defaultRecord: "PA_F3", checked: false, photoTaken: false },
-    { id: "2.4", label: "2.4. Garantir que estão aplicadas as abraçadeiras de fixação da prateleira ao rail lateral", defaultRecord: "PA_F3", checked: false, photoTaken: false },
-    { id: "2.5", label: "2.5. Confirmar que a tampa superior não tem empenos", defaultRecord: "", checked: false, photoTaken: false },
-    { id: "2.6", label: "2.6. Verificar a aplicação das etiquetas de SN", defaultRecord: "", checked: false, photoTaken: false },
-  ]);
+  const [shelfItems, setShelfItems] = useState<InspectionItem[]>(isNls ? NLS_SHELF_ITEMS : REWORK_SHELF_ITEMS);
 
   // 3. Control Module
-  const [controlModuleItems, setControlModuleItems] = useState<InspectionItem[]>([
-    { id: "3.1", label: "3.1. Verificar o correto suporte do módulo na parte inferior e a aplicação das chapas de aperto superior", defaultRecord: "", checked: false, photoTaken: false },
-    { id: "3.2", label: "3.2. Verificação geral da montagem dos componentes (mecânicos e electricos/electrónicos)", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
-    { id: "3.3", label: "3.3. Verificar a boa conexão de todos os conectores da MB", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
-    { id: "3.4", label: "3.4. Verificar a conexão entre placa MB e EL", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
-    { id: "3.5", label: "3.5. Verificar a aplicação das etiquetas de SN", defaultRecord: "CM_F1_1", checked: false, photoTaken: false },
-    { id: "3.6", label: "3.6. Verificar a boa conexão de todos cabos ethernet ligados aos switchs", defaultRecord: "CM_F1_2", checked: false, photoTaken: false },
-    { id: "3.7", label: "3.7. Verificar a boa fixação das fontes PSU", defaultRecord: "", checked: false, photoTaken: false },
-    { id: "3.8", label: "3.8. Verificação da passagem de cabos e a sua amarração na parte móvel", defaultRecord: "CM_F2_1", checked: false, photoTaken: false },
-    { id: "3.9", label: "3.9. Verificação da amarração dos cabos das prateleiras no interior do módulo", defaultRecord: "CM_F2_2", checked: false, photoTaken: false },
-    { id: "3.10", label: "3.10. Verificar a alimentação de todos os switchs de rede", defaultRecord: "CM_F1_2", checked: false, photoTaken: false },
-    { id: "3.11", label: "3.11. Verificação da uniformidade das folgas da gaveta", defaultRecord: "CM_F3", checked: false, photoTaken: false },
-    { id: "3.12", label: "3.12. Verificar o funcionamento do trinco da gaveta e a presença de chave", defaultRecord: "CM_F3", checked: false, photoTaken: false },
-    { id: "3.13", label: "3.13. Verificação da ligação elétrica nas tomadas do módulo", defaultRecord: "CM_F4", checked: false, photoTaken: false },
-    { id: "3.14", label: "3.14. Verificar funcionamento do router instalado", defaultRecord: "CM_F5", checked: false, photoTaken: false },
-    { id: "3.15", label: "3.15. Verificar a aplicação da chapa e do terminal de pagamento (questionar se aplicável)", defaultRecord: "", checked: false, photoTaken: false },
-    { id: "3.16", label: "3.16. Verificar a saída de cabo de alimentação geral pela parte inferior do módulo e garantir o correto posicionamento, para não ficar esmagado na palete", defaultRecord: "CM_F6", checked: false, photoTaken: false },
-  ]);
+  const [controlModuleItems, setControlModuleItems] = useState<InspectionItem[]>(isNls ? NLS_CONTROL_MODULE_ITEMS : REWORK_CONTROL_MODULE_ITEMS);
 
   // 4. Geral
-  const [generalItems, setGeneralItems] = useState<InspectionItem[]>([
-    { id: "4.1", label: "4.1. Inspeção geral das estruturas do módulo, prateleiras e armário", defaultRecord: "GL_F1", checked: false, photoTaken: false },
-    { id: "4.2", label: "4.2. Verificação geral de pintura", defaultRecord: "GL_F2", checked: false, photoTaken: false },
-    { id: "4.3", label: "4.3. Verificar presença da chave do CM junto dos documentos da máquina", defaultRecord: "GL_F3", checked: false, photoTaken: false },
-    { id: "4.4", label: "4.4. Verificação da presença do calço entre a porta e a grelha inferior.", defaultRecord: "GL_F4", checked: false, photoTaken: false },
-    { id: "4.5", label: "4.5. Conectar cabo do armário numa das tomadas do módulo e verificar o funcionamento (frio e ventilação)", defaultRecord: "", checked: false, photoTaken: false },
-  ]);
+  const [generalItems, setGeneralItems] = useState<InspectionItem[]>(isNls ? NLS_GENERAL_ITEMS : REWORK_GENERAL_ITEMS);
 
-  // 5. Packaging
-  const [packagingItems, setPackagingItems] = useState<InspectionItem[]>([
-    { id: "5.1", label: "5.1. Verificar a ancoragem dos cabos e a aplicação das placas de esferovite", defaultRecord: "PK_F1", checked: false, photoTaken: false },
-    { id: "5.2", label: "5.2. Verificar o embalamento final", defaultRecord: "PK_F2", checked: false, photoTaken: false },
-  ]);
+  // 5. Packaging — igual para Rework e NLS
+  const [packagingItems, setPackagingItems] = useState<InspectionItem[]>(PACKAGING_ITEMS);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -289,7 +358,8 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
         reportPdfBlob, // Sempre usar fallback para download direto
         false,
         cabinetType,
-        additionalNotes
+        additionalNotes,
+        machineType
       );
 
       if (success) {
@@ -353,6 +423,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
         version: 1,
         savedAt: new Date().toISOString(),
         cabinetType,
+        machineType,
         formData,
         cabinetItems,
         shelfItems,
@@ -486,8 +557,6 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
           variant="outline"
           className={`flex-1 flex items-center justify-center gap-2 ${isRecorded ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
           onClick={handleCaptureClick}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => { e.stopPropagation(); handleCaptureClick(e); }}
         >
           {isVideo ? <VideoIcon className="w-4 h-4" /> : <CameraIcon className="w-4 h-4" />}
           {recordId}
@@ -499,7 +568,6 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
             size="icon"
             className="flex items-center justify-center text-blue-600 border-blue-300 hover:bg-blue-50"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPreviewMedia({ data: mediaData, isVideo, id: recordId }); }}
-            onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setPreviewMedia({ data: mediaData, isVideo, id: recordId }); }}
           >
             <Eye className="w-4 h-4" />
           </Button>
@@ -641,6 +709,22 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
             name="date"
             value={formData.date}
             onChange={handleFormChange}
+            className="bg-secondary/50"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Tipo de Máquina</label>
+          <Input
+            value={machineType === 'nls' ? 'NLS' : 'Rework'}
+            disabled
+            className="bg-secondary/50"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Tipo de Cabinet</label>
+          <Input
+            value={cabinetType === 'cabinet-with-cm' ? 'Cabinet with CM' : 'Cabinet'}
+            disabled
             className="bg-secondary/50"
           />
         </div>

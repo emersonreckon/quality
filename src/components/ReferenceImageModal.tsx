@@ -139,7 +139,6 @@ export const ReferenceImageButton: React.FC<ReferenceImageButtonProps> = ({ reco
         size="sm"
         className={`flex items-center gap-1 text-xs border-blue-300 text-blue-600 hover:bg-blue-50 ${className || ''}`}
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-        onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
       >
         <Eye className="w-3.5 h-3.5" />
         Ref.

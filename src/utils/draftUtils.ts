@@ -5,6 +5,7 @@ export interface DraftJSON {
   version: 1;
   savedAt: string;
   cabinetType: 'cabinet' | 'cabinet-with-cm';
+  machineType: 'rework' | 'nls';
   formData: {
     technicianName: string;
     date: string;

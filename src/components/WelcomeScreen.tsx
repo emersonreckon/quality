@@ -5,7 +5,7 @@ import SerialInput from '@/components/SerialInput';
 interface WelcomeScreenProps {
   isInIframe: boolean;
   isLoading: boolean;
-  onSerialSubmit: (serial: string, cabinetType: 'cabinet' | 'cabinet-with-cm') => Promise<void>;
+  onSerialSubmit: (serial: string, cabinetType: 'cabinet' | 'cabinet-with-cm', machineType: 'rework' | 'nls') => Promise<void>;
   openInNewWindow: () => void;
 }
 
