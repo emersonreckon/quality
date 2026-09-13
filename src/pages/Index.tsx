@@ -37,18 +37,17 @@ const Index = () => {
       .finally(() => setIsDraftListLoading(false));
   }, [showInspectionForm]);
 
+  // Remove qualquer Service Worker/cache de versões antigas da app: a app corre
+  // 100% offline com os ficheiros já embutidos pelo Capacitor, e um SW cache-first
+  // sem invalidação fazia com que atualizações do APK continuassem a mostrar a UI antiga.
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(
-          registration => {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-          },
-          err => {
-            console.log('ServiceWorker registration failed: ', err);
-          }
-        );
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => registration.unregister());
       });
+    }
+    if ('caches' in window) {
+      caches.keys().then(names => names.forEach(name => caches.delete(name)));
     }
   }, []);
 
