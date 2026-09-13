@@ -94,7 +94,7 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
 
   return (
     // TEMP: cartão em tela cheia no telemóvel (sem cantos/sombra/limite de largura) — reverter junto com o Header
-    <div className="w-full min-h-dvh mb-[calc(env(safe-area-inset-bottom)_*_-1)] sm:min-h-0 sm:mb-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
+    <div className="w-full min-h-dvh sm:min-h-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
       {/* TEMP: badge de diagnóstico do scroll — remover depois de resolvido */}
       <div className="fixed top-1 left-1 z-[999] bg-black/80 text-white text-[9px] leading-tight px-2 py-1 rounded font-mono pointer-events-none">
         {debugInfo}

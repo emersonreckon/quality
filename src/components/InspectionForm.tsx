@@ -649,7 +649,10 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ serialNumber, cabinetTy
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white p-4 md:p-6 rounded-xl shadow-sm animate-fade-in">
+    <div
+      className="w-full max-w-5xl mx-auto bg-white p-4 md:p-6 rounded-xl shadow-sm animate-fade-in"
+      style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+    >
       {showCamera && (
         <Camera
           onCapture={handleCaptureMedia}

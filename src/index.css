@@ -78,7 +78,6 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
