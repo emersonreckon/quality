@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,28 +19,6 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
   const [cabinetType, setCabinetType] = useState<'cabinet' | 'cabinet-with-cm'>('cabinet-with-cm');
   const [isScanning, setIsScanning] = useState(false);
   const isNative = Capacitor.isNativePlatform();
-
-  // TEMP: diagnóstico do scroll indevido — remover depois de resolvido
-  const [debugInfo, setDebugInfo] = useState('');
-  useEffect(() => {
-    const measure = () => {
-      const probe = document.createElement('div');
-      probe.style.cssText = 'position:fixed;bottom:0;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;';
-      document.body.appendChild(probe);
-      const insetBottom = getComputedStyle(probe).paddingBottom;
-      document.body.removeChild(probe);
-
-      const html = document.documentElement;
-      setDebugInfo(
-        `innerH:${window.innerHeight} visVP:${Math.round(window.visualViewport?.height ?? -1)} ` +
-        `scrollH:${html.scrollHeight} clientH:${html.clientHeight} ` +
-        `bodyPB:${getComputedStyle(document.body).paddingBottom} insetB:${insetBottom}`
-      );
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, []);
 
   const handleScan = async () => {
     setIsScanning(true);
@@ -94,18 +72,11 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
 
   return (
     // TEMP: cartão em tela cheia no telemóvel (sem cantos/sombra/limite de largura) — reverter junto com o Header
-    <div className="w-full min-h-dvh sm:min-h-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
-      {/* TEMP: badge de diagnóstico do scroll — remover depois de resolvido */}
-      <div className="fixed top-1 left-1 z-[999] bg-black/80 text-white text-[9px] leading-tight px-2 py-1 rounded font-mono pointer-events-none">
-        {debugInfo}
-      </div>
+    <div className="w-full min-h-screen sm:min-h-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
       <form onSubmit={handleSubmit} className="flex flex-col">
 
         {/* HERO SECTION */}
-        <div
-          className="w-full bg-[#E5292F] px-[24px] pb-[32px] relative overflow-hidden animate-fade-up"
-          style={{ animationDelay: '0s', paddingTop: 'calc(28px + env(safe-area-inset-top))' }}
-        >
+        <div className="w-full bg-[#E5292F] pt-[28px] px-[24px] pb-[32px] relative overflow-hidden animate-fade-up" style={{ animationDelay: '0s' }}>
           {/* Decorative Circles */}
           <div className="absolute top-[-20px] right-[-20px] w-[120px] h-[120px] rounded-full bg-white opacity-[0.07]"></div>
           <div className="absolute bottom-[-40px] right-[-10px] w-[160px] h-[160px] rounded-full bg-white opacity-[0.05]"></div>
@@ -131,10 +102,7 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
           </div>
         </div>
 
-        <div
-          className="px-6 pt-6 space-y-6 flex flex-col"
-          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
-        >
+        <div className="px-6 py-6 space-y-6 flex flex-col">
           {/* SERIAL NUMBER FIELD */}
           <div className="space-y-2 animate-fade-up" style={{ animationDelay: '0.08s' }}>
             <Label htmlFor="serial" className="text-[11px] font-[700] uppercase tracking-[1px] text-[#9A9A9A] font-inter">

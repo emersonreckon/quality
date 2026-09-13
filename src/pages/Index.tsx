@@ -156,7 +156,7 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-dvh flex flex-col bg-[#F9F9F9] antialiased">
+    <div className="min-h-screen flex flex-col bg-[#F9F9F9] antialiased">
       {/* TEMP: Header oculto apenas na tela inicial — reverter removendo esta condição */}
       {showInspectionForm && (
         <Header
