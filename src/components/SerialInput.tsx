@@ -72,11 +72,14 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
 
   return (
     // TEMP: cartão em tela cheia no telemóvel (sem cantos/sombra/limite de largura) — reverter junto com o Header
-    <div className="w-full min-h-[calc(100vh_-_env(safe-area-inset-bottom))] sm:min-h-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
+    <div className="w-full min-h-screen mb-[calc(env(safe-area-inset-bottom)_*_-1)] sm:min-h-0 sm:mb-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
       <form onSubmit={handleSubmit} className="flex flex-col">
 
         {/* HERO SECTION */}
-        <div className="w-full bg-[#E5292F] pt-[28px] px-[24px] pb-[32px] relative overflow-hidden animate-fade-up" style={{ animationDelay: '0s' }}>
+        <div
+          className="w-full bg-[#E5292F] px-[24px] pb-[32px] relative overflow-hidden animate-fade-up"
+          style={{ animationDelay: '0s', paddingTop: 'calc(28px + env(safe-area-inset-top))' }}
+        >
           {/* Decorative Circles */}
           <div className="absolute top-[-20px] right-[-20px] w-[120px] h-[120px] rounded-full bg-white opacity-[0.07]"></div>
           <div className="absolute bottom-[-40px] right-[-10px] w-[160px] h-[160px] rounded-full bg-white opacity-[0.05]"></div>
