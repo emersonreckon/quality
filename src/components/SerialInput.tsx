@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,28 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
   const [cabinetType, setCabinetType] = useState<'cabinet' | 'cabinet-with-cm'>('cabinet-with-cm');
   const [isScanning, setIsScanning] = useState(false);
   const isNative = Capacitor.isNativePlatform();
+
+  // TEMP: diagnóstico do scroll indevido — remover depois de resolvido
+  const [debugInfo, setDebugInfo] = useState('');
+  useEffect(() => {
+    const measure = () => {
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;bottom:0;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;';
+      document.body.appendChild(probe);
+      const insetBottom = getComputedStyle(probe).paddingBottom;
+      document.body.removeChild(probe);
+
+      const html = document.documentElement;
+      setDebugInfo(
+        `innerH:${window.innerHeight} visVP:${Math.round(window.visualViewport?.height ?? -1)} ` +
+        `scrollH:${html.scrollHeight} clientH:${html.clientHeight} ` +
+        `bodyPB:${getComputedStyle(document.body).paddingBottom} insetB:${insetBottom}`
+      );
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
 
   const handleScan = async () => {
     setIsScanning(true);
@@ -73,6 +95,10 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
   return (
     // TEMP: cartão em tela cheia no telemóvel (sem cantos/sombra/limite de largura) — reverter junto com o Header
     <div className="w-full min-h-dvh mb-[calc(env(safe-area-inset-bottom)_*_-1)] sm:min-h-0 sm:mb-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
+      {/* TEMP: badge de diagnóstico do scroll — remover depois de resolvido */}
+      <div className="fixed top-1 left-1 z-[999] bg-black/80 text-white text-[9px] leading-tight px-2 py-1 rounded font-mono pointer-events-none">
+        {debugInfo}
+      </div>
       <form onSubmit={handleSubmit} className="flex flex-col">
 
         {/* HERO SECTION */}
