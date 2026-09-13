@@ -71,8 +71,7 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
   };
 
   return (
-    // TEMP: cartão em tela cheia no telemóvel (sem cantos/sombra/limite de largura) — reverter junto com o Header
-    <div className="w-full min-h-screen sm:min-h-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
+    <div className="w-full max-w-[480px] mx-auto overflow-hidden bg-white shadow-xl rounded-[32px] sm:rounded-[40px] flex flex-col relative">
       <form onSubmit={handleSubmit} className="flex flex-col">
 
         {/* HERO SECTION */}

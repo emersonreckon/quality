@@ -157,21 +157,17 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9F9F9] antialiased">
-      {/* TEMP: Header oculto apenas na tela inicial — reverter removendo esta condição */}
-      {showInspectionForm && (
-        <Header
-          serialNumber={serialNumber}
-          resetSession={resetSession}
-          onLogoClick={() => {
-            if (window.confirm('Tens a certeza que queres sair? O progresso não guardado será perdido.')) {
-              handleFormReset();
-            }
-          }}
-        />
-      )}
+      <Header
+        serialNumber={serialNumber}
+        resetSession={resetSession}
+        onLogoClick={showInspectionForm ? () => {
+          if (window.confirm('Tens a certeza que queres sair? O progresso não guardado será perdido.')) {
+            handleFormReset();
+          }
+        } : undefined}
+      />
 
-      {/* TEMP: padding removido apenas na tela inicial para o card ocupar a tela cheia no telemóvel — reverter junto com o Header */}
-      <main className={`flex-1 flex flex-col justify-start animate-fade-in overflow-auto ${showInspectionForm ? 'items-center py-8 px-4 sm:px-6' : 'items-stretch sm:items-center sm:py-8 sm:px-6'}`}>
+      <main className="flex-1 flex flex-col items-center justify-start py-8 px-4 sm:px-6 animate-fade-in overflow-auto">
         {!showInspectionForm ? (
           <>
             <WelcomeScreen
