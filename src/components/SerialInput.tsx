@@ -131,7 +131,10 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
           </div>
         </div>
 
-        <div className="px-6 py-6 space-y-6 flex flex-col">
+        <div
+          className="px-6 pt-6 space-y-6 flex flex-col"
+          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+        >
           {/* SERIAL NUMBER FIELD */}
           <div className="space-y-2 animate-fade-up" style={{ animationDelay: '0.08s' }}>
             <Label htmlFor="serial" className="text-[11px] font-[700] uppercase tracking-[1px] text-[#9A9A9A] font-inter">
