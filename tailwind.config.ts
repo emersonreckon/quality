@@ -19,6 +19,11 @@ export default {
 			}
 		},
 		extend: {
+			// Ecrãs baixos (telemóveis pequenos, portáteis em paisagem): o cartão do
+			// ecrã inicial fica mais compacto para o painel de rascunhos caber sem scroll.
+			screens: {
+				short: { raw: '(max-height: 800px)' }
+			},
 			fontFamily: {
 				sans: [
 					'"SF Pro Display"',

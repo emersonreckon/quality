@@ -14,7 +14,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   onSerialSubmit
 }) => {
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto flex flex-1 flex-col sm:block sm:flex-none">
       <SerialInput 
         onSerialSubmit={onSerialSubmit} 
         isLoading={isLoading}

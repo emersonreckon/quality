@@ -73,11 +73,13 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
   return (
     // No telemóvel o cartão ocupa o ecrã todo (sem cantos/sombra/limite de largura);
     // o formato flutuante é só a partir de sm. Não remover.
-    <div className="w-full min-h-screen sm:min-h-0 sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
+    // flex-1 (em vez de min-h-screen) deixa o cartão encolher para dar espaço ao
+    // painel de rascunhos, sem nunca ficar menor do que o próprio conteúdo.
+    <div className="w-full flex-1 sm:flex-none sm:max-w-[480px] sm:mx-auto overflow-hidden bg-white sm:shadow-xl rounded-none sm:rounded-[40px] flex flex-col relative">
       <form onSubmit={handleSubmit} className="flex flex-col">
 
         {/* HERO SECTION */}
-        <div className="w-full bg-[#E5292F] pt-[28px] px-[24px] pb-[32px] relative overflow-hidden animate-fade-up" style={{ animationDelay: '0s' }}>
+        <div className="w-full bg-[#E5292F] pt-[28px] px-[24px] pb-[32px] short:pt-4 short:pb-5 relative overflow-hidden animate-fade-up" style={{ animationDelay: '0s' }}>
           {/* Decorative Circles */}
           <div className="absolute top-[-20px] right-[-20px] w-[120px] h-[120px] rounded-full bg-white opacity-[0.07]"></div>
           <div className="absolute bottom-[-40px] right-[-10px] w-[160px] h-[160px] rounded-full bg-white opacity-[0.05]"></div>
@@ -103,7 +105,7 @@ const SerialInput: React.FC<SerialInputProps> = ({ onSerialSubmit, isLoading }) 
           </div>
         </div>
 
-        <div className="px-6 py-6 space-y-6 flex flex-col">
+        <div className="px-6 py-6 space-y-6 short:py-4 short:space-y-4 flex flex-col">
           {/* SERIAL NUMBER FIELD */}
           <div className="space-y-2 animate-fade-up" style={{ animationDelay: '0.08s' }}>
             <Label htmlFor="serial" className="text-[11px] font-[700] uppercase tracking-[1px] text-[#9A9A9A] font-inter">

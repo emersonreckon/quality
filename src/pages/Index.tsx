@@ -180,8 +180,8 @@ const Index = () => {
               openInNewWindow={openInNewWindow}
             />
             {(isDraftListLoading || pendingDrafts.length > 0) && (
-              <div className="w-full max-w-[480px] mx-auto mt-4 bg-white shadow-xl rounded-[32px] overflow-hidden">
-                <div className="px-6 py-5">
+              <div className="w-full shrink-0 bg-white border-t border-[#E8E8E8] sm:mt-4 sm:max-w-[480px] sm:mx-auto sm:border-0 sm:shadow-xl sm:rounded-[32px] overflow-hidden">
+                <div className="px-6 py-5 short:py-3">
                   <h3 className="text-[11px] font-[700] uppercase tracking-[1.4px] text-[#9A9A9A] font-inter mb-3">
                     Inspeções Pendentes
                   </h3>
